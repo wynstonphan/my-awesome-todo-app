@@ -24,15 +24,18 @@ public class User {
     @Column(name="lastname")
     private String lastName;
 
-//    @Column(name="username")
-//    private String userName;
-//
-//    @Column(name="password")
-//    private String password;
+    @Column(name="username")
+    private String username;
 
-    @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.LAZY, targetEntity = Task.class)
+    @Column(name="password")
+    private String password;
+
+    @OneToMany(cascade = CascadeType.ALL, targetEntity = Task.class)
     @JoinColumn(name="user_id", referencedColumnName = "id")
     private Collection<Task> tasks;
 
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name ="user_role", joinColumns = @JoinColumn (name ="user_id"), inverseJoinColumns = @JoinColumn(name="role_id"))
+    private Collection<Role> roles;
 
 }
