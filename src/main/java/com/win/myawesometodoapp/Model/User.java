@@ -24,6 +24,12 @@ public class User {
     @Column(name="lastname")
     private String lastName;
 
+//    @Column(name="username")
+//    private String userName;
+//
+//    @Column(name="password")
+//    private String password;
+
     @OneToMany(cascade = CascadeType.ALL,fetch = FetchType.LAZY, targetEntity = Task.class)
     @JoinColumn(name="user_id", referencedColumnName = "id")
     private Collection<Task> tasks;
