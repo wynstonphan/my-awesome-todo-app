@@ -1,20 +1,24 @@
 package com.win.myawesometodoapp.Controller;
 
+import com.win.myawesometodoapp.Model.User;
 import com.win.myawesometodoapp.Payload.Request.LoginRequest;
 import com.win.myawesometodoapp.Payload.Request.SignupRequest;
 import com.win.myawesometodoapp.Payload.Response.JwtResponse;
 import com.win.myawesometodoapp.Payload.Response.MessageResponse;
 import com.win.myawesometodoapp.Repository.UserRepository;
 import com.win.myawesometodoapp.Security.Jwt.JwtUtils;
+import com.win.myawesometodoapp.Service.UserDetailServiceImp;
 import com.win.myawesometodoapp.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,7 +35,11 @@ public class AuthController {
     @Autowired
     AuthenticationManager authenticationManager;
 
+    @Autowired
+    private UserRepository userRepository;
 
+    @Autowired
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
     private UserService userService;
@@ -39,21 +47,31 @@ public class AuthController {
     @Autowired
     JwtUtils jwtUtils;
 
-    @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest){
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+            User user = userRepository.findByUsername(loginRequest.getUsername());
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtils.generateJwtToken(authentication);
+            if(user == null ){
+                return ResponseEntity.badRequest().body(new MessageResponse("Username or Password does not match"));
+            }
+            String password = userRepository.findByUsername(loginRequest.getUsername()).getPassword();
+            Boolean matches = bCryptPasswordEncoder.matches(loginRequest.getPassword(), password);
+            if(!matches){
+                return ResponseEntity.badRequest().body(new MessageResponse("Username or Password does not match"));
+            }
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        return ResponseEntity.ok(new JwtResponse(jwt,userDetails.getUsername(),roles));
+            String jwt = jwtUtils.generateJwtToken(authentication);
+
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(item -> item.getAuthority())
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(new JwtResponse(jwt,userDetails.getUsername(),roles));
     }
 
     @PostMapping("/register")
