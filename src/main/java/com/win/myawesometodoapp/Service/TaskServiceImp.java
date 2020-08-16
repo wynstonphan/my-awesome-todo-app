@@ -9,7 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 
 
 @Service
@@ -26,19 +28,21 @@ public class TaskServiceImp implements TaskService{
 
     @Override
     public Task addTask(Long id, TaskDTO taskDTO) {
+        Date today = Calendar.getInstance().getTime();
         Task task = new Task();
-        task.setComplete(taskDTO.getComplete());
+        task.setComplete(false);
         task.setText(taskDTO.getText());
-        task.setDateSubmit(taskDTO.getSubmitDate());
+        task.setDateSubmit(today);
         task.setUserId(id);
         return taskRepo.save(task);
     }
 
     @Override
-    public Task updateTask(Long id, Task task) {
-        if(taskRepo.findById(task.getId()) != null)
-            return taskRepo.save(task);
-        return null;
+    public Task completeTask(Long taskId) {
+        Task task = taskRepo.getOne(taskId);
+        task.setComplete(true);
+        return taskRepo.save(task);
+
     }
 
     @Override

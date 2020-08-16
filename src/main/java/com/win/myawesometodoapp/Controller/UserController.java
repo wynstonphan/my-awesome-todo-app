@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     @Autowired
@@ -51,15 +52,13 @@ public class UserController {
         return new ResponseEntity<>(taskService.addTask(id,taskDTO),HttpStatus.ACCEPTED);
     }
 
-    @PutMapping("/{id}/task")
-    ResponseEntity<?> userUpdaterTask(@PathVariable Long id, @RequestBody Task task){
+    @PutMapping("/{id}/task/{taskId}")
+    ResponseEntity<?> completeTask(@PathVariable Long id,@PathVariable Long taskId){
         if(!isAuthorized(id)){
             return ResponseEntity.status(403).body(new MessageResponse("You're trying to access to other user"));
-        } else{
-        if (task.getUserId() != id){
-            return ResponseEntity.status(HttpServletResponse.SC_FORBIDDEN).body(new MessageResponse("This task is not belong to you"));
         }
-        return new ResponseEntity<>(taskService.updateTask(id,task),HttpStatus.ACCEPTED);}
+
+        return new ResponseEntity<>(taskService.completeTask(taskId),HttpStatus.OK);
     }
 
     @DeleteMapping("/{id}/task/{taskId}")
@@ -67,6 +66,6 @@ public class UserController {
         if(!isAuthorized(id)){
             return ResponseEntity.status(403).body(new MessageResponse("You're trying to access to other user"));
         }
-        return new ResponseEntity<>(taskService.deleteTask(taskId),HttpStatus.OK);
+        return new ResponseEntity<>(taskService.deleteTask(taskId),HttpStatus.OK).ok().body(new MessageResponse("Delete Successfully"));
     }
 }
